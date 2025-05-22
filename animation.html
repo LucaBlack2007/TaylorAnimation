@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Taylor Series Visualization</title>
+    <style>
+        :root {
+            --cream: #f5f5dc;
+            --light-blue: #add8e6;
+            --light-gray: #d3d3d3;
+            --line-original: #1e3a8a;
+            --line-approx: #d32f2f;
+        }
+        body {
+            background-color: var(--light-gray);
+            font-family: Arial, sans-serif;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        #container {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        #controls,
+        #constControls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        #controls select,
+        #controls input[type="range"],
+        #controls button,
+        #constControls select,
+        #constControls button {
+            padding: 8px 12px;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            background-color: var(--light-blue);
+            font-size: 14px;
+            cursor: pointer;
+        }
+        #controls button,
+        #constControls button {
+            background-color: var(--light-gray);
+        }
+        #equation,
+        #constEquation,
+        #constApproxValue {
+            font-family: monospace;
+            text-align: center;
+            margin: 10px 0;
+            word-break: break-word;
+        }
+        canvas {
+            background-color: #fff;
+            border-radius: 12px;
+            width: 100%;
+            height: 600px;
+        }
+        .fraction {
+            display: inline-block;
+            text-align: center;
+            vertical-align: middle;
+            margin: 0 4px;
+        }
+        .fraction .num {
+            display: block;
+        }
+        .fraction .den {
+            display: block;
+            border-top: 1px solid #000;
+        }
+        #constApproxValue {
+            background-color: var(--cream);
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>Taylor Series Visualization</h1>
+        <div id="controls">
+            <label for="funcSelect">Function:</label>
+            <select id="funcSelect">
+                <option value="sin">sin(x)</option>
+                <option value="cos">cos(x)</option>
+                <option value="exp">e^x</option>
+                <option value="reciprocal">1 / (1 - x)</option>
+            </select>
+            <label for="termsRange">Terms: <span id="termsLabel">1</span></label>
+            <input type="range" id="termsRange" min="1" max="50" value="1">
+            <button id="playBtn">Play</button>
+        </div>
+        <div id="equation"></div>
+        <canvas id="canvas"></canvas>
+        <div id="constControls">
+            <label for="constSelect">Irrational:</label>
+            <select id="constSelect">
+                <option value="e">e</option>
+                <option value="pi">π</option>
+            </select>
+            <button id="constPlayBtn">Approximate</button>
+        </div>
+        <div id="constEquation"></div>
+        <div id="constApproxValue"></div>
+    </div>
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        const funcSelect = document.getElementById("funcSelect");
+        const termsRange = document.getElementById("termsRange");
+        const termsLabel = document.getElementById("termsLabel");
+        const playBtn = document.getElementById("playBtn");
+        const eqDiv = document.getElementById("equation");
+        const constSelect = document.getElementById("constSelect");
+        const constPlayBtn = document.getElementById("constPlayBtn");
+        const constEquationDiv = document.getElementById("constEquation");
+        const constApproxValueDiv = document.getElementById("constApproxValue");
+
+        const width = canvas.width = canvas.offsetWidth;
+        const height = canvas.height = canvas.offsetHeight;
+        const yMin = -2;
+        const yMax = 2;
+
+        const xMin = -Math.PI * 3;
+        const xMax = Math.PI * 3;
+        const mapX = x => (x - xMin) / (xMax - xMin) * width;
+        const mapY = y => height - (y - yMin) / (yMax - yMin) * height;
+
+        function drawAxes() {
+            ctx.strokeStyle = "#999";
+            ctx.lineWidth = 1;
+            const y0 = mapY(0);
+            ctx.beginPath();
+            ctx.moveTo(0, y0);
+            ctx.lineTo(width, y0);
+            ctx.stroke();
+            const x0 = mapX(0);
+            ctx.beginPath();
+            ctx.moveTo(x0, 0);
+            ctx.lineTo(x0, height);
+            ctx.stroke();
+        }
+
+        function originalFunc(name, x) {
+            switch (name) {
+                case "sin": return Math.sin(x);
+                case "cos": return Math.cos(x);
+                case "exp": return Math.exp(x);
+                case "reciprocal": return 1 / (1 - x);
+            }
+        }
+
+        function factorial(n) {
+            return n <= 1 ? 1 : n * factorial(n - 1);
+        }
+
+        function taylorTerm(name, k, x) {
+            switch (name) {
+                case "sin": return ((-1) ** k) * x ** (2 * k + 1) / factorial(2 * k + 1);
+                case "cos": return ((-1) ** k) * x ** (2 * k) / factorial(2 * k);
+                case "exp": return x ** k / factorial(k);
+                case "reciprocal": return x ** k;
+            }
+        }
+
+        function taylorSum(name, n, x) {
+            return Array.from({ length: n }, (_ , k) => taylorTerm(name, k, x))
+                .reduce((a, b) => a + b, 0);
+        }
+
+        function getPi(n) {
+            return 4 * Array.from({ length: n }, (_ , k) =>
+                (k % 2 === 0 ? 1 : -1) / (2 * k + 1)
+            ).reduce((a, b) => a + b, 0);
+        }
+
+        function generateEquationHTML(name, n) {
+            const parts = [];
+            for (let k = 0; k < n; k++) {
+                let sign = k > 0 ? " + " : "";
+                if (name === "sin" || name === "cos") {
+                    sign = k === 0 ? "" : ((-1) ** k < 0 ? " - " : " + ");
+                }
+                const exp = name === "sin"
+                    ? 2 * k + 1
+                    : name === "cos"
+                        ? 2 * k
+                        : k;
+                let num = exp === 0
+                    ? "1"
+                    : exp === 1
+                        ? "x"
+                        : `x<sup>${exp}</sup>`;
+                let termHTML = num;
+                if ((name === "sin" && exp > 1) ||
+                    (name === "cos" && exp > 0) ||
+                    (name === "exp" && exp > 0)) {
+                    termHTML = `<span class=\"fraction\"><span class=\"num\">${num}</span><span class=\"den\">${exp}!<\
+/span></span>`;
+                }
+                parts.push(sign + termHTML);
+            }
+            return `${name}(x) ≈${parts.join("")}`;
+        }
+
+        function generateConstEquationHTML(name, n) {
+            if (name === "e") {
+                const parts = Array.from({ length: n }, (_ , k) =>
+                    k === 0
+                        ? "1"
+                        : `<span class=\"fraction\"><span class=\"num\">1</span><span class=\"den\">${k}!<\
+/span></span>`
+                );
+                return `e ≈ ${parts.join(" + ")}`;
+            } else {
+                const parts = Array.from({ length: n }, (_ , k) => {
+                    const frac = `<span class=\"fraction\"><span class=\"num\">1</span><span class=\"den\">${2 * k + 1}<\
+/span></span>`;
+                    const sign = k === 0
+                        ? ""
+                        : (k % 2 === 0 ? " + " : " - ");
+                    return sign + frac;
+                });
+                return `π ≈ 4 × (${parts.join("")})`;
+            }
+        }
+
+        function drawFunction(name, terms) {
+            ctx.clearRect(0, 0, width, height);
+            drawAxes();
+            ctx.strokeStyle = "var(--line-original)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i <= width; i++) {
+                const x = xMin + (xMax - xMin) * (i / width);
+                const y = originalFunc(name, x);
+                if (i === 0) ctx.moveTo(i, mapY(y)); else ctx.lineTo(i, mapY(y));
+            }
+            ctx.stroke();
+            ctx.strokeStyle = "var(--line-approx)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i <= width; i++) {
+                const x = xMin + (xMax - xMin) * (i / width);
+                const y = taylorSum(name, terms, x);
+                if (i === 0) ctx.moveTo(i, mapY(y)); else ctx.lineTo(i, mapY(y));
+            }
+            ctx.stroke();
+        }
+
+        function update() {
+            const t = parseInt(termsRange.value);
+            termsLabel.textContent = t;
+            eqDiv.innerHTML = generateEquationHTML(funcSelect.value, t);
+            drawFunction(funcSelect.value, t);
+        }
+
+        playBtn.addEventListener("click", () => {
+            let current = 1;
+            const max = parseInt(termsRange.max);
+            playBtn.disabled = true;
+            const interval = setInterval(() => {
+                if (current > max) { clearInterval(interval); playBtn.disabled = false; return; }
+                termsRange.value = current;
+                update();
+                current++;
+            }, 125);
+        });
+
+        constPlayBtn.addEventListener("click", () => {
+            let current = 1;
+            const max = parseInt(termsRange.max);
+            constPlayBtn.disabled = true;
+            const interval = setInterval(() => {
+                if (current > max) { clearInterval(interval); constPlayBtn.disabled = false; return; }
+                constEquationDiv.innerHTML = generateConstEquationHTML(constSelect.value, current);
+                constApproxValueDiv.textContent = `≈ ${constSelect.value === 'e' ? taylorSum('exp', current, 1) : getPi(current)}`;
+                current++;
+            }, 125);
+        });
+
+        termsRange.addEventListener("input", update);
+        funcSelect.addEventListener("change", update);
+        update();
+    </script>
+</body>
+</html>
