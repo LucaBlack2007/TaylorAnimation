@@ -27,8 +27,7 @@
             max-width: 1200px;
             width: 100%;
         }
-        #controls,
-        #constControls {
+        #controls, #constControls {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
@@ -36,11 +35,8 @@
             justify-content: center;
             margin-bottom: 10px;
         }
-        #controls select,
-        #controls input[type="range"],
-        #controls button,
-        #constControls select,
-        #constControls button {
+        #controls select, #controls input[type="range"], #controls button,
+        #constControls select, #constControls button {
             padding: 8px 12px;
             border: 1px solid var(--light-gray);
             border-radius: 8px;
@@ -48,13 +44,10 @@
             font-size: 14px;
             cursor: pointer;
         }
-        #controls button,
-        #constControls button {
+        #controls button, #constControls button {
             background-color: var(--light-gray);
         }
-        #equation,
-        #constEquation,
-        #constApproxValue {
+        #equation, #constEquation, #constApproxValue {
             font-family: monospace;
             text-align: center;
             margin: 10px 0;
@@ -72,13 +65,8 @@
             vertical-align: middle;
             margin: 0 4px;
         }
-        .fraction .num {
-            display: block;
-        }
-        .fraction .den {
-            display: block;
-            border-top: 1px solid #000;
-        }
+        .fraction .num { display: block; }
+        .fraction .den { display: block; border-top: 1px solid #000; }
         #constApproxValue {
             background-color: var(--cream);
             padding: 8px 12px;
@@ -135,164 +123,149 @@
 
         const xMin = -Math.PI * 3;
         const xMax = Math.PI * 3;
-        const mapX = x => (x - xMin) / (xMax - xMin) * width;
-        const mapY = y => height - (y - yMin) / (yMax - yMin) * height;
+        const mapX = x => ( x - xMin ) / ( xMax - xMin ) * width;
+        const mapY = y => height - ( y - yMin ) / ( yMax - yMin ) * height;
 
         function drawAxes() {
             ctx.strokeStyle = "#999";
             ctx.lineWidth = 1;
-            const y0 = mapY(0);
-            ctx.beginPath();
-            ctx.moveTo(0, y0);
-            ctx.lineTo(width, y0);
-            ctx.stroke();
-            const x0 = mapX(0);
-            ctx.beginPath();
-            ctx.moveTo(x0, 0);
-            ctx.lineTo(x0, height);
-            ctx.stroke();
+            const y0 = mapY( 0 );
+            ctx.beginPath(); ctx.moveTo( 0, y0 ); ctx.lineTo( width, y0 ); ctx.stroke();
+            const x0 = mapX( 0 );
+            ctx.beginPath(); ctx.moveTo( x0, 0 ); ctx.lineTo( x0, height ); ctx.stroke();
         }
 
-        function originalFunc(name, x) {
-            switch (name) {
-                case "sin": return Math.sin(x);
-                case "cos": return Math.cos(x);
-                case "exp": return Math.exp(x);
-                case "reciprocal": return 1 / (1 - x);
+        function originalFunc( name, x ) {
+            switch ( name ) {
+                case "sin": return Math.sin( x );
+                case "cos": return Math.cos( x );
+                case "exp": return Math.exp( x );
+                case "reciprocal": return 1 / ( 1 - x );
             }
         }
 
-        function factorial(n) {
-            return n <= 1 ? 1 : n * factorial(n - 1);
+        function factorial( n ) {
+            return n <= 1 ? 1 : n * factorial( n - 1 );
         }
 
-        function taylorTerm(name, k, x) {
-            switch (name) {
-                case "sin": return ((-1) ** k) * x ** (2 * k + 1) / factorial(2 * k + 1);
-                case "cos": return ((-1) ** k) * x ** (2 * k) / factorial(2 * k);
-                case "exp": return x ** k / factorial(k);
+        function taylorTerm( name, k, x ) {
+            switch ( name ) {
+                case "sin": return ( ( -1 ) ** k ) * x ** ( 2 * k + 1 ) / factorial( 2 * k + 1 );
+                case "cos": return ( ( -1 ) ** k ) * x ** ( 2 * k )     / factorial( 2 * k );
+                case "exp": return x ** k / factorial( k );
                 case "reciprocal": return x ** k;
             }
         }
 
-        function taylorSum(name, n, x) {
-            return Array.from({ length: n }, (_ , k) => taylorTerm(name, k, x))
-                .reduce((a, b) => a + b, 0);
+        function taylorSum( name, n, x ) {
+            return Array.from({ length: n }, (_ , k) => taylorTerm( name, k, x ))
+                .reduce(( a, b ) => a + b, 0);
         }
 
-        function getPi(n) {
-            return 4 * Array.from({ length: n }, (_ , k) =>
-                (k % 2 === 0 ? 1 : -1) / (2 * k + 1)
-            ).reduce((a, b) => a + b, 0);
+        function getPi( n ) {
+            const factor = Math.sqrt( 12 );
+            let sum = 0;
+            for ( let k = 0; k < n; k++ ) {
+                sum += ( ( -1 / 3 ) ** k ) / ( 2 * k + 1 );
+            }
+            return factor * sum;
         }
 
-        function generateEquationHTML(name, n) {
+        function generateEquationHTML( name, n ) {
             const parts = [];
-            for (let k = 0; k < n; k++) {
+            for ( let k = 0; k < n; k++ ) {
                 let sign = k > 0 ? " + " : "";
-                if (name === "sin" || name === "cos") {
-                    sign = k === 0 ? "" : ((-1) ** k < 0 ? " - " : " + ");
+                if ( name === "sin" || name === "cos" ) {
+                    sign = k === 0 ? "" : (( -1 ) ** k < 0 ? " - " : " + ");
                 }
-                const exp = name === "sin"
-                    ? 2 * k + 1
-                    : name === "cos"
-                        ? 2 * k
-                        : k;
-                let num = exp === 0
-                    ? "1"
-                    : exp === 1
-                        ? "x"
-                        : `x<sup>${exp}</sup>`;
+                const exp = name === "sin" ? 2 * k + 1 : name === "cos" ? 2 * k : k;
+                let num = exp === 0 ? "1" : exp === 1 ? "x" : `x<sup>${exp}</sup>`;
                 let termHTML = num;
-                if ((name === "sin" && exp > 1) ||
-                    (name === "cos" && exp > 0) ||
-                    (name === "exp" && exp > 0)) {
-                    termHTML = `<span class=\"fraction\"><span class=\"num\">${num}</span><span class=\"den\">${exp}!<\
-/span></span>`;
+                if ( ( name === "sin" && exp > 1 ) || ( name === "cos" && exp > 0 ) || ( name === "exp" && exp > 0 ) ) {
+                    termHTML = `<span class="fraction"><span class="num">${num}</span><span class="den">${exp}!</span></span>`;
                 }
-                parts.push(sign + termHTML);
+                parts.push( sign + termHTML );
             }
-            return `${name}(x) ≈${parts.join("")}`;
+            return `${ name }( x ) ≈${ parts.join( "" ) }`;
         }
 
-        function generateConstEquationHTML(name, n) {
-            if (name === "e") {
+        function generateConstEquationHTML( name, n ) {
+            if ( name === "e" ) {
                 const parts = Array.from({ length: n }, (_ , k) =>
-                    k === 0
-                        ? "1"
-                        : `<span class=\"fraction\"><span class=\"num\">1</span><span class=\"den\">${k}!<\
-/span></span>`
+                    k === 0 ? "1" : `<span class="fraction"><span class="num">1</span><span class="den">${k}!</span></span>`
                 );
-                return `e ≈ ${parts.join(" + ")}`;
+                return `e ≈ ${ parts.join( " + " ) }`;
             } else {
-                const parts = Array.from({ length: n }, (_ , k) => {
-                    const frac = `<span class=\"fraction\"><span class=\"num\">1</span><span class=\"den\">${2 * k + 1}<\
-/span></span>`;
-                    const sign = k === 0
-                        ? ""
-                        : (k % 2 === 0 ? " + " : " - ");
-                    return sign + frac;
-                });
-                return `π ≈ 4 × (${parts.join("")})`;
+                const factorHTML = `√12 × (`;
+                const terms = [];
+                for ( let k = 0; k < n; k++ ) {
+                    const sign = k === 0 ? "" : ( k % 2 === 0 ? " + " : " - " );
+                    const denom = 2 * k + 1;
+                    terms.push( sign +
+                        `<span class="fraction"><span class="num">1</span><span class="den">${denom}</span></span>` +
+                        ` / 3<sup>${k}</sup>`
+                    );
+                }
+                return `π ≈ ${factorHTML}${terms.join("" )})`;
             }
         }
 
-        function drawFunction(name, terms) {
-            ctx.clearRect(0, 0, width, height);
+        function drawFunction( name, terms ) {
+            ctx.clearRect( 0, 0, width, height );
             drawAxes();
             ctx.strokeStyle = "var(--line-original)";
             ctx.lineWidth = 2;
             ctx.beginPath();
-            for (let i = 0; i <= width; i++) {
-                const x = xMin + (xMax - xMin) * (i / width);
-                const y = originalFunc(name, x);
-                if (i === 0) ctx.moveTo(i, mapY(y)); else ctx.lineTo(i, mapY(y));
+            for ( let i = 0; i <= width; i++ ) {
+                const x = xMin + ( xMax - xMin ) * ( i / width );
+                const y = originalFunc( name, x );
+                if ( i === 0 ) ctx.moveTo( i, mapY( y ) ); else ctx.lineTo( i, mapY( y ) );
             }
             ctx.stroke();
             ctx.strokeStyle = "var(--line-approx)";
             ctx.lineWidth = 2;
             ctx.beginPath();
-            for (let i = 0; i <= width; i++) {
-                const x = xMin + (xMax - xMin) * (i / width);
-                const y = taylorSum(name, terms, x);
-                if (i === 0) ctx.moveTo(i, mapY(y)); else ctx.lineTo(i, mapY(y));
+            for ( let i = 0; i <= width; i++ ) {
+                const x = xMin + ( xMax - xMin ) * ( i / width );
+                const y = taylorSum( name, terms, x );
+                if ( i === 0 ) ctx.moveTo( i, mapY( y ) ); else ctx.lineTo( i, mapY( y ) );
             }
             ctx.stroke();
         }
 
         function update() {
-            const t = parseInt(termsRange.value);
+            const t = parseInt( termsRange.value );
             termsLabel.textContent = t;
-            eqDiv.innerHTML = generateEquationHTML(funcSelect.value, t);
-            drawFunction(funcSelect.value, t);
+            eqDiv.innerHTML = generateEquationHTML( funcSelect.value, t );
+            drawFunction( funcSelect.value, t );
         }
 
-        playBtn.addEventListener("click", () => {
+        playBtn.addEventListener( "click", () => {
             let current = 1;
-            const max = parseInt(termsRange.max);
+            const max = parseInt( termsRange.max );
             playBtn.disabled = true;
-            const interval = setInterval(() => {
-                if (current > max) { clearInterval(interval); playBtn.disabled = false; return; }
+            const interval = setInterval( () => {
+                if ( current > max ) { clearInterval( interval ); playBtn.disabled = false; return; }
                 termsRange.value = current;
                 update();
                 current++;
-            }, 125);
+            }, 125 );
         });
 
-        constPlayBtn.addEventListener("click", () => {
+        constPlayBtn.addEventListener( "click", () => {
             let current = 1;
-            const max = parseInt(termsRange.max);
+            const max = parseInt( termsRange.max );
             constPlayBtn.disabled = true;
-            const interval = setInterval(() => {
-                if (current > max) { clearInterval(interval); constPlayBtn.disabled = false; return; }
-                constEquationDiv.innerHTML = generateConstEquationHTML(constSelect.value, current);
-                constApproxValueDiv.textContent = `≈ ${constSelect.value === 'e' ? taylorSum('exp', current, 1) : getPi(current)}`;
+            const interval = setInterval( () => {
+                if ( current > max ) { clearInterval( interval ); constPlayBtn.disabled = false; return; }
+                constEquationDiv.innerHTML = generateConstEquationHTML( constSelect.value, current );
+                constApproxValueDiv.textContent = `≈ ${ constSelect.value === 'e' ? taylorSum( 'exp', current, 1 ) : getPi( current ) }`;
                 current++;
-            }, 125);
+            }, 125 );
         });
 
-        termsRange.addEventListener("input", update);
-        funcSelect.addEventListener("change", update);
+        termsRange.addEventListener( "input", update );
+        funcSelect.addEventListener( "change", update );
         update();
     </script>
 </body>
